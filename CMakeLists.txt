@@ -1,22 +1,15 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 
 project(ce CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
 
-file(GLOB_RECURSE
-    SOURCE_FILES
-    src/*.cpp
-    src/*.hpp
-)
+# Find the 64-bit system package
+find_package(SDL3 REQUIRED CONFIG)
 
-# target_compile_options(your_target PRIVATE -save-temps=obj)
-add_executable(ce ${SOURCE_FILES})
+add_executable(ce src/main.cpp)
 
-include_directories(src)
-if(MINGW)
-    # target_link_options(gb)
-    target_compile_options(ce PRIVATE -std=c++23)
-endif()
+target_include_directories(ce PRIVATE src)
 
-target_link_libraries(ce)
+# Link SDL3
+target_link_libraries(ce PRIVATE SDL3::SDL3)
