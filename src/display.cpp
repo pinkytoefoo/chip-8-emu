@@ -1,5 +1,6 @@
-#include "display.hpp"
+#include <iostream>
 
+#include "display.hpp"
 
 bool Display::initialize()
 {

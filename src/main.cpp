@@ -1,6 +1,7 @@
 #include <SDL3/SDL.h>
 
 #include <array>
+#include <span>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -9,17 +10,11 @@
 #include <string_view>
 #include <vector>
 
-using byte = std::uint8_t;
-using word = std::uint16_t;
+#include "display.hpp"
 
-constexpr word START_ADDRESS = 0x200;
-constexpr size_t MEMORY_SIZE = 4096;
-
-constexpr int DISPLAY_WIDTH = 64;
-constexpr int DISPLAY_HEIGHT = 32;
-constexpr int SCALE = 10;
-
-constexpr byte BIGGEST_BYTE_VALUE = std::numeric_limits<byte>::max();
+namespace paths {
+    constexpr std::string_view ROM = "assets/test_opcode.ch8";
+}
 
 class CPU {
 public:
@@ -74,20 +69,11 @@ public:
         opcode_ = (static_cast<word>(memory_[pc_]) << 8) | memory_[pc_ + 1];
         pc_ += 2;
 
-        const byte x =
-            (opcode_ & 0x0F00u) >> 8;
-
-        const byte y =
-            (opcode_ & 0x00F0u) >> 4;
-
-        const byte imm =
-            opcode_ & 0x00FFu;
-
-        const byte type =
-            opcode_ & 0x000Fu;
-
-        const word addr =
-            opcode_ & 0x0FFFu;
+        const byte x = (opcode_ & 0x0F00u) >> 8;
+        const byte y = (opcode_ & 0x00F0u) >> 4;
+        const byte imm = opcode_ & 0x00FFu;
+        const byte type = opcode_ & 0x000Fu;
+        const word addr = opcode_ & 0x0FFFu;
 
         // execute
         switch (opcode_ & 0xF000u) {
@@ -165,14 +151,12 @@ public:
 
             // ADD Vx, Vy
             case 0x4: {
-                const word sum =
-                    registers_[x] + registers_[y];
+                const word sum = registers_[x] + registers_[y];
+                
+                // set carry
+                registers_[0xF] = sum > BIGGEST_BYTE_VALUE ? 1 : 0;
 
-                registers_[0xF] =
-                    sum > BIGGEST_BYTE_VALUE ? 1 : 0;
-
-                registers_[x] =
-                    sum & 0x00FFu;
+                registers_[x] = sum & 0x00FFu;
 
                 break;
             }
@@ -262,7 +246,7 @@ int main()
     CPU cpu;
     Display display;
 
-    if (!cpu.loadInstructionsFromDisk("test_opcode.ch8")) {
+    if (!cpu.loadInstructionsFromDisk(paths::ROM)) {
         std::cerr << "failed to load ROM.\n";
         return 1;
     }
@@ -283,9 +267,7 @@ int main()
         }
 
         cpu.cycle();
-
         display.render(cpu.display());
-
         SDL_Delay(2);
     }
 
